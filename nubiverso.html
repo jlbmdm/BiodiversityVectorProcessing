@@ -684,10 +684,10 @@ window.onload = function() {
     actualizarContadores();
   
     filterList.innerHTML = "";
-    wordEntries.forEach(([word]) => {
+    wordEntries.forEach(([word, count]) => {
       const btn = document.createElement('button');
-      btn.textContent = word;
-      btn.title = `Quitar "${word}"`;
+      btn.textContent = `${word} (${count})`;
+      btn.title = `Quitar "${word}" (aparece ${count} ${count === 1 ? 'vez' : 'veces'})`;
       btn.addEventListener('click', () => {
         delete mostrarNube.freqGlobal[word];
         const nuevasPalabras = Object.keys(mostrarNube.freqGlobal).flatMap(w => {
@@ -704,8 +704,8 @@ window.onload = function() {
   
     WordCloud(canvas, {
       list: list,
-      gridSize: 12,
-      weightFactor: 18,
+      gridSize: 8,          // ⬅️ Más preciso (antes: 12)
+      weightFactor: 20,     // ⬅️ Más contraste de tamaños (antes: 18)
       fontFamily: "Inter, Arial, sans-serif",
       color: cloudColor,
       rotateRatio: 0.5,
