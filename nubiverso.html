@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nubiverso - Nube de palabras interactiva</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f7f7f7;
+    --muted: #7b7b7b;
+    --primary: #ff6b35;
+    --primary-dark: #ff8c42;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+    font-family: Inter, system-ui, Arial, sans-serif;
+    background: var(--bg);
+    color: #111;
+  }
+  .app {
+    display: flex;
+    gap: 18px;
+    height: 100%;
+    padding: 18px;
+    box-sizing: border-box;
+  }
+  .left {
+    width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+  }
+  h1 {
+    font-size: 24px;
+    margin: 0 0 4px;
+    font-weight: 700;
+  }
+  .author-license {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .author-name {
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .license-text {
+    font-size: 12px;
+    font-style: italic;
+  }
+  .aviso-chrome-titulo {
+    font-size: 12px;
+    font-weight: 400;
+    margin-top: 4px;
+  }
+  .aviso-chrome {
+    font-size: 11px;
+    font-weight: 400;
+    margin-top: 4px;
+  }
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 8px 0 4px 0;
+  }
+  button {
+    background: #111;
+    color: #fff;
+    border: none;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    user-select: none;
+    transition: all 0.2s;
+  }
+  button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  button.ghost {
+    background: transparent;
+    color: #111;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+  button.warn {
+    background: #e53e3e;
+  }
+  button.primary-action {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #fff;
+    font-size: 15px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  }
+  button.primary-action:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba255, 107, 53, 0.4);
+  }
+  button.recording {
+    background: #e53e3e;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  button.pause-btn {
+    background: #f59e0b;
+    color: #fff;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  button.pause-btn:hover {
+    background: #d97706;
+  }
+  button.resume-btn {
+    background: #10b981;
+    color: #fff;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  button.resume-btn:hover {
+    background: #059669;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  .small {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  #transcript {
+    height: 180px;
+    overflow: auto;
+    padding: 8px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #fbfbfb, #fff);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    font-size: 14px;
+    white-space: pre-wrap;
+    outline: none;
+  }
+  #transcript[contenteditable="true"] {
+    cursor: text;
+  }
+  textarea#summaryText {
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .cloud-wrap {
+    flex: 1;
+    background: #fff;
+    border-radius: 10px;
+    padding: 8px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  }
+  #wordcloud {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  #questionsOverlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: none;
+    z-index: 10;
+  }
+  #questionsOverlay.visible {
+    display: block;
+  }
+  .question-item {
+    margin-bottom: 8px;
+    padding: 8px;
+    background: #f0f0f0;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  footer.small {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+  .meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  input[type=range] {
+    flex: 1;
+    min-width: 100px;
+  }
+  input[type=checkbox] {
+    cursor: pointer;
+  }
+  input[type=text], input[type=password] {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(0,0,0,0.1);
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  #filterList {
+    margin-top: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 6px;
+    font-size: 14px;
+  }
+  #filterList button {
+    margin-left: 6px;
+    padding: 2px 6px;
+    font-size: 12px;
+  }
+  #fileInput {
+    display: none;
+  }
+  #costInfo {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .slider-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .slider-container label {
+    font-size: 13px;
+    color: var(--muted);
+    min-width: 130px;
+  }
+  .slider-value {
+    min-width: 45px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111;
+  }
+  .recording-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #fee;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #c00;
+    font-weight: 600;
+  }
+  .recording-indicator .dot {
+    width: 10px;
+    height: 10px;
+    background: #c00;
+    border-radius: 50%;
+    animation: pulse 1s ease-in-out infinite;
+  }
+  .recording-indicator.paused {
+    background: #fef3c7;
+    color: #f59e0b;
+  }
+  .recording-indicator.paused .dot {
+    background: #f59e0b;
+    animation: none;
+  }
+  .recording-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .warning-box {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #856404;
+  }
+
+  /* Modo oscuro */
+  .dark-mode {
+    --bg: #1e1e1e;
+    --panel: #2d2d2d;
+    --muted: #aaaaaa;
+    --primary: #ff8c42;
+    --primary-dark: #ffb366;
+    color: #f7f7f7;
+  }
+  
+  .dark-mode .card {
+    background: var(--panel);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .dark-mode button {
+    background: #444;
+    color: #fff;
+  }
+  
+  .dark-mode button.ghost {
+    background: transparent;
+    color: #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .dark-mode button.primary-action {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #1e1e1e;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(255, 140, 66, 0.4);
+  }
+
+  .dark-mode button.primary-action:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(255, 140, 66, 0.5);
+  }
+  
+  .dark-mode #transcript,
+  .dark-mode textarea#summaryText,
+  .dark-mode input[type=text],
+  .dark-mode input[type=password] {
+    background: #333;
+    color: #f7f7f7;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .dark-mode .cloud-wrap {
+    background: var(--panel);
+  }
+
+  .dark-mode #questionsOverlay {
+    background: rgba(45, 45, 45, 0.95);
+    color: #f7f7f7;
+  }
+
+  .dark-mode .question-item {
+    background: #444;
+    color: #f7f7f7;
+  }
+
+  .dark-mode #filterList {
+    background: #333;
+    color: #f7f7f7;
+  }
+
+  .dark-mode .slider-value {
+    color: #f7f7f7;
+  }
+
+  .dark-mode .warning-box {
+    background: #4a4a2a;
+    border-color: #7a7a3a;
+    color: #ffc;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="left">
+    <div class="card">
+      <h1>Nubiverso</h1>
+      <div class="aviso-chrome">
+        <span class="aviso-chrome">Atención: solo funciona en <strong>Chrome</strong> (ver indicaciones abajo).</span>
+      </div>
+
+    <div class="card">
+      <div class="controls">
+        <button id="btnStart" class="primary-action">🎙 Escuchar</button>
+        <button id="btnStop" class="ghost" disabled>⏹ Detener</button>
+        <button id="btnReset" class="ghost warn">🔄 Reiniciar</button>
+      </div>
+      <div id="recordingStatus" style="margin-top:10px;"></div>
+
+      <div class="section-label">Guardar:</div>
+      <div class="controls">
+        <button id="btnSaveTxt" class="ghost" title="TXT sin formatear">💾 TXT</button>
+        <button id="btnSavePdf" class="ghost" title="PDF + TXT formateado (requiere API key de OpenAI)">📄 PDF</button>
+        <button id="btnDownload" class="ghost" title="Nube de palabras">📥 PNG</button>
+        <button id="btnDownloadAudio" class="ghost" disabled title="Grabación de audio">🎵 Audio</button>
+      </div>
+
+      <div class="section-label">Utilidades:</div>
+      <div class="controls">
+        <button id="btnGenerateQuestions" class="ghost" title="Generar 5 preguntas sobre el texto">💡 Preguntas</button>
+        <button id="btnToggleTheme" class="ghost">🌙 Modo oscuro</button>
+      </div>
+
+      <div class="controls" style="margin-top:8px;">
+        <button id="btnLoadFile" class="ghost">📂 Cargar TXT</button>
+        <button id="btnCopy" class="ghost">📋 Copiar transcripción</button>
+      </div>
+
+      <div style="margin-top:10px" class="meta">
+        <div class="small">Ignorar stopwords: <input type="checkbox" id="chkStop" checked style="margin-left:6px"/></div>
+      </div>
+      <div class="slider-container">
+        <label for="updateInterval">Actualizar nube cada:</label>
+        <input id="updateInterval" type="range" min="1" max="60" value="15">
+        <span id="intervalValue" class="slider-value">15s</span>
+      </div>
+      <div class="slider-container">
+        <label for="maxWords">Máx palabras:</label>
+        <input id="maxWords" type="range" min="20" max="250" value="40">
+        <span id="maxWordsValue" class="slider-value">40</span>
+      </div>
+      
+    </div>
+
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:6px">Transcripción / texto editable</div>
+      <div id="transcript" contenteditable="true" spellcheck="false" aria-label="Transcripción editable"></div>
+      <div style="margin-top:8px" class="small">Palabras distintas: <strong id="distinct">0</strong> — Total palabras: <strong id="total">0</strong></div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:6px">Resumen generado</div>
+      <textarea id="summaryText" rows="6" style="width:100%;border-radius:8px;padding:8px;resize:vertical;" aria-label="Resumen generado"></textarea>
+      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap: wrap;">
+        <button id="btnLocalSummary" class="ghost" style="flex-shrink:0;" title="Generar resumen básico, sin IA">📝 Local</button>
+        <button id="btnSummary" class="ghost" style="flex-shrink:0;" title="Generar resumen elaborado (requiere API key de OpenAI)">📝 OpenAI</button>
+        <button id="btnSaveSummary" class="ghost" style="flex-shrink:0;">💾 Guardar</button>
+      </div>
+      <div id="costInfo" aria-live="polite" aria-atomic="true"></div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:6px">Palabras frecuentes (click para quitar)</div>
+      <div id="filterList" aria-live="polite" aria-relevant="additions"></div>
+    </div>
+
+    <!-- Configuración de API Key -->
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:6px">🔐 Configuración API OpenAI</div>
+      <input type="password" id="apiKeyInput" placeholder="Ingresa tu API Key de OpenAI" />
+      <div style="margin-top:8px; display:flex; gap:8px;">
+        <button id="btnSaveKey" class="ghost">💾 Guardar Key</button>
+        <button id="btnClearKey" class="ghost warn">🗑️ Borrar Key</button>
+      </div>
+      <div id="keyStatus" class="small" style="margin-top:6px;"></div>
+      <div class="small" style="margin-top:6px;">
+        💡 La API Key se guarda en localStorage de tu navegador (no se envía a ningún servidor)
+      </div>
+      <div class="aviso-chrome">
+        <span class="aviso-chrome-titulo"><strong>Solo funciona en Chrome</strong>.</span>
+      </div>
+      <div class="aviso-chrome">
+        <span class="aviso-chrome"> Requiere renovar permisos de micro cada 5' (Web Speech API).</span>
+      </div>
+      <div class="aviso-chrome">
+        <span class="aviso-chrome">Si se carga desde localhost puede ir mejor.</span>
+      </div>
+      <div class="aviso-chrome">
+        <span class="aviso-chrome">Pte cambiar a OpenAI API o a Whisper en local.</span>
+      </div>
+      <div class="author-license">
+        <span class="author-name">by Jose Bengoa</span> · <span class="license-text">Uso libre con atribución (MIT License)</span>
+      </div>
+    </div>
+
+      <div class="warning-box">
+        <strong>💡 Sobre permisos del micrófono:</strong><br>
+        • <strong>Chrome</strong>: Pide permisos de micro cada 5 minutos.<br>
+        • <strong>Edge, Firefox, etc.</strong>: No funciona<br>
+        • Pte: usar <strong>localhost</strong> o <strong>HTTPS</strong><br>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="right">
+    <div class="cloud-wrap card">
+      <div id="questionsOverlay">
+        <div style="font-weight:700;margin-bottom:10px;">💡 Preguntas generadas:</div>
+        <div id="questionsList"></div>
+        <button id="btnCloseQuestions" class="ghost" style="margin-top:10px;">✖️ Cerrar</button>
+      </div>
+      <canvas id="wordcloud"></canvas>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".txt" />
+
+<script src="https://cdn.jsdelivr.net/npm/wordcloud@1.1.2/src/wordcloud2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+window.onload = function() {
+  // Verificar protocolo al inicio
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    console.warn('⚠️ AVISO: Para mejor funcionamiento, usa HTTPS o localhost');
+  }
+
+  const canvas = document.getElementById('wordcloud');
+  const transcriptEl = document.getElementById('transcript');
+  const distinctEl = document.getElementById('distinct');
+  const totalEl = document.getElementById('total');
+  const btnStart = document.getElementById('btnStart');
+  const btnStop = document.getElementById('btnStop');
+  const btnReset = document.getElementById('btnReset');
+  const btnDownload = document.getElementById('btnDownload');
+  const btnLoadFile = document.getElementById('btnLoadFile');
+  const btnSaveTxt = document.getElementById('btnSaveTxt');
+  const btnSavePdf = document.getElementById('btnSavePdf');
+  const btnCopy = document.getElementById('btnCopy');
+  const btnDownloadAudio = document.getElementById('btnDownloadAudio');
+  const btnGenerateQuestions = document.getElementById('btnGenerateQuestions');
+  const fileInput = document.getElementById('fileInput');
+  const chkStop = document.getElementById('chkStop');
+  const maxWordsRange = document.getElementById('maxWords');
+  const maxWordsValue = document.getElementById('maxWordsValue');
+  const filterList = document.getElementById('filterList');
+  const summaryText = document.getElementById('summaryText');
+  const btnSaveSummary = document.getElementById('btnSaveSummary');
+  const btnLocalSummary = document.getElementById('btnLocalSummary');
+  const btnSummary = document.getElementById('btnSummary');
+  const costInfo = document.getElementById('costInfo');
+  const btnToggleTheme = document.getElementById('btnToggleTheme');
+  const updateIntervalRange = document.getElementById('updateInterval');
+  const intervalValue = document.getElementById('intervalValue');
+  const recordingStatus = document.getElementById('recordingStatus');
+  const apiKeyInput = document.getElementById('apiKeyInput');
+  const btnSaveKey = document.getElementById('btnSaveKey');
+  const btnClearKey = document.getElementById('btnClearKey');
+  const keyStatus = document.getElementById('keyStatus');
+  const questionsOverlay = document.getElementById('questionsOverlay');
+  const questionsList = document.getElementById('questionsList');
+  const btnCloseQuestions = document.getElementById('btnCloseQuestions');
+  const body = document.body;
+
+  let finalTranscript = '';
+  let wordFreq = {};
+  let totalWords = 0;
+  let recognition = null;
+  let drawTimer = null;
+  let updateInterval = 15;
+  let lastUpdateTime = 0;
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let recordingStartTime = 0;
+  let recordingTimer = null;
+  let reconnectAttempts = 0;
+  let isPaused = false;
+  let shouldReconnect = false;
+  let pausedAtTime = 0;
+  let totalPausedTime = 0;
+  const MAX_RECONNECT_ATTEMPTS = 3;
+
+  function getTimestamp() {
+    return new Date().toISOString().slice(0,19).replace(/:/g,'-').replace('T', '_');
+  }
+
+  function getApiKey() {
+    return localStorage.getItem('openai_api_key') || '';
+  }
+
+  function updateKeyStatus() {
+    const key = getApiKey();
+    if(key) {
+      keyStatus.textContent = '✅ API Key guardada (comienza con: ' + key.substring(0, 10) + '...)';
+      keyStatus.style.color = '#28a745';
+    } else {
+      keyStatus.textContent = '⚠️ No hay API Key guardada';
+      keyStatus.style.color = '#dc3545';
+    }
+  }
+
+  btnSaveKey.addEventListener('click', () => {
+    const key = apiKeyInput.value.trim();
+    if(!key) {
+      alert('Por favor ingresa una API Key válida');
+      return;
+    }
+    localStorage.setItem('openai_api_key', key);
+    apiKeyInput.value = '';
+    updateKeyStatus();
+    alert('✅ API Key guardada de forma segura en tu navegador');
+  });
+
+  btnClearKey.addEventListener('click', () => {
+    if(confirm('¿Estás seguro de que quieres borrar la API Key guardada?')) {
+      localStorage.removeItem('openai_api_key');
+      updateKeyStatus();
+      alert('🗑️ API Key borrada');
+    }
+  });
+
+  updateIntervalRange.addEventListener('input', (e) => {
+    updateInterval = parseInt(e.target.value);
+    intervalValue.textContent = updateInterval + 's';
+  });
+
+  maxWordsRange.addEventListener('input', (e) => {
+    maxWordsValue.textContent = e.target.value;
+    mostrarNube(transcriptEl.textContent, true);
+  });
+
+  const SPANISH_STOPWORDS = new Set(("0,1,2,3,4,5,6,7,8,9,_,a,actualmente,acuerdo,adelante,ademas,además,adrede,afirmó,agregó,ahi,ahora,ahí,al,algo,alguna,algunas,alguno,algunos,algún,alli,allí,alrededor,ambos,ampleamos,antano,antaño,ante,anterior,antes,apenas,aproximadamente,aquel,aquella,aquellas,aquello,aquellos,aqui,aquél,aquélla,aquéllas,aquéllos,aquí,arriba,arribaabajo,aseguró,asi,así,atras,aun,aunque,ayer,añadió,aún,b,bajo,bastante,bien,breve,buen,buena,buenas,bueno,buenos,c,cada,casi,cerca,cierta,ciertas,cierto,ciertos,cinco,claro,comentó,como,con,conmigo,conocer,conseguimos,conseguir,considera,consideró,consigo,consigue,consiguen,consigues,contigo,contra,cosas,creo,cual,cuales,cualquier,cuando,cuanta,cuantas,cuanto,cuantos,cuatro,cuenta,cuál,cuáles,cuándo,cuánta,cuántas,cuánto,cuántos,cómo,d,da,dado,dan,dar,de,debajo,debe,deben,debido,decir,dejó,del,delante,demasiado,demás,dentro,deprisa,desde,despacio,despues,después,detras,detrás,dia,dias,dice,dicen,dicho,dieron,diferente,diferentes,dijeron,dijo,dio,donde,dos,durante,día,días,dónde,e,ejemplo,el,ella,ellas,ello,ellos,embargo,empleais,emplean,emplear,empleas,empleo,en,encima,encuentra,enfrente,enseguida,entonces,entre,era,erais,eramos,eran,eras,eres,es,esa,esas,ese,eso,esos,esta,estaba,estabais,estaban,estabas,estad,estada,estadas,estado,estados,estais,estamos,estan,estando,estar,estaremos,estará,estarán,estarás,estaré,estaréis,estaría,estaríais,estaríamos,estarían,estarías,estas,este,estemos,esto,estos,estoy,estuve,estuviera,estuvierais,estuvieran,estuvieras,estuvieron,estuviese,estuvieseis,estuviesen,estuvieses,estuvimos,estuviste,estuvisteis,estuviéramos,estuviésemos,estuvo,está,estábamos,estáis,están,estás,esté,estéis,estén,estés,ex,excepto,existe,existen,explicó,expresó,f,fin,final,fue,fuera,fuerais,fueran,fueras,fueron,fuese,fueseis,fuesen,fueses,fui,fuimos,fuiste,fuisteis,fuéramos,fuésemos,g,general,gran,grandes,gueno,h,ha,haber,habia,habida,habidas,habido,habidos,habiendo,habla,hablan,habremos,habrá,habrán,habrás,habré,habréis,habría,habríais,habríamos,habrían,habrías,habéis,había,habíais,habíamos,habían,habías,hace,haceis,hacemos,hacen,hacer,hacerlo,haces,hacia,haciendo,hago,han,has,hasta,hay,haya,hayamos,hayan,hayas,hayáis,he,hecho,hemos,hicieron,hizo,horas,hoy,hube,hubiera,hubierais,hubieran,hubieras,hubieron,hubiese,hubieseis,hubiesen,hubieses,hubimos,hubiste,hubisteis,hubiéramos,hubiésemos,hubo,i,igual,incluso,indicó,informo,informó,intenta,intentais,intentamos,intentan,intentar,intentas,intento,ir,j,junto,k,l,la,lado,largo,las,le,lejos,les,llegó,lleva,llevar,lo,los,luego,lugar,m,mal,manera,manifestó,mas,mayor,me,mediante,medio,mejor,mencionó,menos,menudo,mi,mia,mias,mientras,mio,mios,mis,misma,mismas,mismo,mismos,modo,momento,mucha,muchas,mucho,muchos,muy,más,mí,mía,mías,mío,míos,n,nada,nadie,ni,ninguna,ningunas,ninguno,ningunos,ningún,no,nos,nosotras,nosotros,nuestra,nuestras,nuestro,nuestros,nueva,nuevas,nuevo,nuevos,nunca,o,ocho,os,otra,otras,otro,otros,p,pais,para,parece,parte,partir,pasada,pasado,paìs,peor,pero,pesar,poca,pocas,poco,pocos,podeis,podemos,poder,podria,podriais,podriamos,podrian,podrias,podrá,podrán,poner,por,por qué,porque,posible,primer,primera,primero,primeros,principalmente,pronto,propia,propias,propio,propios,proximo,próximo,próximos,pudo,pueda,puede,pueden,puedo,pues,q,qeu,que,quedó,queremos,quien,quienes,quiere,quiza,quizas,quizá,quizás,quién,quiénes,qué,r,raras,realizado,realizar,realizó,repente,respecto,s,sabe,sabeis,sabemos,saben,saber,sabes,sal,salvo,se,sea,seamos,sean,seas,segun,segunda,segundo,según,seis,ser,sera,seremos,será,serán,serás,seré,seréis,sería,seríais,seríamos,serían,serías,seáis,señaló,si,sido,siempre,siendo,siete,sigue,siguiente,sin,sino,sobre,sois,sola,solamente,solas,solo,solos,somos,son,soy,soyos,su,supuesto,sus,suya,suyas,suyo,suyos,sé,sí,sólo,t,tal,tambien,también,tampoco,tan,tanto,tarde,te,temprano,tendremos,tendrá,tendrán,tendrás,tendré,tendréis,tendría,tendríais,tendríamos,tendrían,tendrías,tened,teneis,tenemos,tener,tenga,tengamos,tengan,tengas,tengo,tengáis,tenida,tenidas,tenido,tenidos,teniendo,tenéis,tenía,teníais,teníamos,tenían,tenías,tercera,ti,tiempo,tiene,tienen,tienes,toda,todas,todavia,todavía,todo,todos,total,trabaja,trabajais,trabajamos,trabajan,trabajar,trabajas,trabajo,tras,trata,través,tres,tu,tus,tuve,tuviera,tuvierais,tuvieran,tuvieras,tuvieron,tuviese,tuvieseis,tuviesen,tuvieses,tuvimos,tuviste,tuvisteis,tuviéramos,tuviésemos,tuvo,tuya,tuyas,tuyo,tuyos,tú,u,ultimo,un,una,unas,uno,unos,usa,usais,usamos,usan,usar,usas,uso,usted,ustedes,v,va,vais,valor,vamos,van,varias,varios,vaya,veces,ver,verdad,verdadera,verdadero,vez,vosotras,vosotros,voy,vuestra,vuestras,vuestro,vuestros,w,x,y,ya,yo,z,él,éramos,ésa,ésas,ése,ésos,ésta,éstas,éste,éstos,última,últimas,último,últimos,eh,yy,yyy,png").split(",").map(s=>s.trim()));
+
+  function autoScrollTranscript() {
+    transcriptEl.scrollTop = transcriptEl.scrollHeight;
+  }
+
+  function contarPalabras(texto) {
+    return texto.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[.,!?;:()"\[\]{}«»""–—\-¿¡]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 0);
+  }
+  
+  function contarDistintas(palabras) {
+    return new Set(palabras).size;
+  }
+
+  function actualizarContadores() {
+    const texto = transcriptEl.textContent || "";
+    const palabras = contarPalabras(texto);
+    distinctEl.textContent = contarDistintas(palabras);
+    totalEl.textContent = palabras.length;
+  }
+
+  function mostrarNube(texto, force = false) {
+    const now = Date.now();
+    if (!force && (now - lastUpdateTime) < (updateInterval * 1000)) {
+      return;
+    }
+    lastUpdateTime = now;
+
+    let palabras = contarPalabras(texto);
+    let freq = {};
+    palabras.forEach(w => {
+      if(chkStop.checked && SPANISH_STOPWORDS.has(w)) return;
+      freq[w] = (freq[w] || 0) + 1;
+    });
+  
+    mostrarNube.freqGlobal = freq;
+  
+    const maxWords = parseInt(maxWordsRange.value);
+    let wordEntries = Object.entries(freq).sort((a,b) => b[1] - a[1]);
+    wordEntries = wordEntries.slice(0, maxWords);
+  
+    const list = wordEntries.map(([word, count]) => [word, count]);
+  
+    actualizarContadores();
+  
+    filterList.innerHTML = "";
+    wordEntries.forEach(([word]) => {
+      const btn = document.createElement('button');
+      btn.textContent = word;
+      btn.title = `Quitar "${word}"`;
+      btn.addEventListener('click', () => {
+        delete mostrarNube.freqGlobal[word];
+        const nuevasPalabras = Object.keys(mostrarNube.freqGlobal).flatMap(w => {
+          return Array(mostrarNube.freqGlobal[w]).fill(w);
+        });
+        mostrarNube(nuevasPalabras.join(" "), true);
+      });
+      filterList.appendChild(btn);
+    });
+
+    const isDarkMode = body.classList.contains('dark-mode');
+    const cloudColor = isDarkMode ? '#f7f7f7' : '#111';
+    const cloudBg = isDarkMode ? '#2d2d2d' : '#fff';
+  
+    WordCloud(canvas, {
+      list: list,
+      gridSize: 12,
+      weightFactor: 18,
+      fontFamily: "Inter, Arial, sans-serif",
+      color: cloudColor,
+      rotateRatio: 0.5,
+      rotationSteps: 2,
+      backgroundColor: cloudBg,
+      clearCanvas: true,
+      drawOutOfBound: false,
+      shrinkToFit: true,
+      origin: [canvas.width/2, canvas.height/2],
+      minSize: 8,
+      hover: function(word) {
+        canvas.title = word ? word[0] + ' (' + word[1] + ')' : '';
+      }
+    });
+  }
+
+  function updateRecordingTime() {
+    if(isPaused) return;
+    const elapsed = Math.floor((Date.now() - recordingStartTime - totalPausedTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    
+    recordingStatus.innerHTML = `
+      <div class="recording-controls">
+        <div class="recording-indicator">
+          <span class="dot"></span>
+          <span>Grabando: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}</span>
+        </div>
+        <button id="btnPause" class="pause-btn">⏸️ Pausar</button>
+      </div>
+    `;
+    
+    const btnPause = document.getElementById('btnPause');
+    if(btnPause) {
+      btnPause.onclick = togglePause;
+    }
+  }
+
+  function togglePause() {
+    if(isPaused) {
+      // Reanudar
+      isPaused = false;
+      totalPausedTime += Date.now() - pausedAtTime;
+      
+      // ⚠️ NO reiniciamos recognition porque nunca lo detuvimos
+      // Solo empezamos a procesar resultados de nuevo
+      
+      if(mediaRecorder && mediaRecorder.state === 'paused') {
+        mediaRecorder.resume();
+      }
+      
+      if(recordingTimer) {
+        clearInterval(recordingTimer);
+      }
+      recordingTimer = setInterval(updateRecordingTime, 1000);
+      updateRecordingTime();
+    } else {
+      // Pausar
+      isPaused = true;
+      pausedAtTime = Date.now();
+      
+      // ⚠️ CRÍTICO: NO detenemos recognition aquí
+      // Solo marcamos isPaused = true para ignorar resultados
+      // Esto mantiene los permisos del micrófono activos
+      
+      if(mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.pause();
+      }
+      
+      if(recordingTimer) {
+        clearInterval(recordingTimer);
+        recordingTimer = null;
+      }
+      
+      const elapsed = Math.floor((pausedAtTime - recordingStartTime - totalPausedTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      
+      recordingStatus.innerHTML = `
+        <div class="recording-controls">
+          <div class="recording-indicator paused">
+            <span class="dot"></span>
+            <span>Pausado: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}</span>
+          </div>
+          <button id="btnResume" class="resume-btn">▶️ Reanudar</button>
+        </div>
+      `;
+      const btnResume = document.getElementById('btnResume');
+      if(btnResume) btnResume.onclick = togglePause;
+    }
+  }
+
+  async function startAudioRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        btnDownloadAudio.onclick = () => {
+          const a = document.createElement('a');
+          a.href = audioUrl;
+          a.download = `grabacion_${getTimestamp()}.webm`;
+          a.click();
+        };
+        btnDownloadAudio.disabled = false;
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      recordingStartTime = Date.now();
+      totalPausedTime = 0;
+      recordingTimer = setInterval(updateRecordingTime, 1000);
+      updateRecordingTime();
+    } catch(err) {
+      console.error('Error al acceder al micrófono:', err);
+      alert('No se pudo acceder al micrófono. Verifica los permisos del navegador.');
+    }
+  }
+
+  function stopAudioRecording() {
+    if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      if(recordingTimer) {
+        clearInterval(recordingTimer);
+        recordingTimer = null;
+      }
+      recordingStatus.innerHTML = '';
+    }
+  }
+
+  transcriptEl.addEventListener('input', () => {
+    actualizarContadores();
+    autoScrollTranscript();
+    mostrarNube(transcriptEl.textContent);
+  });
+
+  chkStop.addEventListener('change', () => {
+    mostrarNube(transcriptEl.textContent, true);
+  });
+
+  function startRecognition() {
+    if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert("❌ Tu navegador no soporta Web Speech API. Por favor usa Chrome o Edge.");
+      return;
+    }
+
+    if(!navigator.onLine) {
+      alert("⚠️ No hay conexión a Internet. El reconocimiento de voz requiere conexión.");
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    shouldReconnect = true;
+    isPaused = false;
+
+    recognition.onstart = () => {
+      console.log('✅ Reconocimiento iniciado');
+      btnStart.disabled = true;
+      btnStart.classList.add('recording');
+      btnStop.disabled = false;
+      reconnectAttempts = 0;
+      if(!mediaRecorder || mediaRecorder.state === 'inactive') {
+        startAudioRecording();
+      }
+    };
+
+    recognition.onerror = e => {
+      console.error('Error en reconocimiento:', e.error);
+      
+      if(e.error === 'not-allowed') {
+        alert('⚠️ Permiso denegado. Por favor:\n\n1. Haz clic en el icono del candado/información (🔒) en la barra de direcciones\n2. Permite el acceso al micrófono\n3. Recarga la página\n4. Intenta de nuevo');
+        stopRecognition();
+        stopAudioRecording();
+        return;
+      }
+      
+      if(e.error === 'network') {
+        if(reconnectAttempts < MAX_RECONNECT_ATTEMPTS && shouldReconnect && !isPaused) {
+          reconnectAttempts++;
+          console.log(`Intento de reconexión ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
+          setTimeout(() => {
+            if(recognition && shouldReconnect && !isPaused) {
+              recognition.start();
+            }
+          }, 1000);
+        } else if(shouldReconnect && !isPaused) {
+          alert(`⚠️ Error de conexión: No se puede conectar al servicio de reconocimiento de voz.\n\nPosibles causas:\n• Pérdida de conexión a Internet\n• El servicio de Google Speech no está disponible\n• Firewall bloqueando la conexión\n\nIntenta:\n1. Verificar tu conexión a Internet\n2. Reiniciar el navegador\n3. Usar Chrome o Edge`);
+          stopRecognition();
+          stopAudioRecording();
+        }
+      } else if(e.error === 'no-speech') {
+        console.log('No se detectó habla, continuando...');
+      } else if(e.error === 'aborted') {
+        console.log('Reconocimiento abortado');
+      } else {
+        console.log('Error no manejado:', e.error);
+      }
+    };
+
+    recognition.onend = () => {
+      console.log('Reconocimiento terminado');
+      // Auto-reinicio solo si no está pausado y debe reconectar
+      if(shouldReconnect && !isPaused) {
+        console.log('🔄 Reconexión automática en 100ms...');
+        setTimeout(() => {
+          if(recognition && shouldReconnect && !isPaused) {
+            recognition.start();
+          }
+        }, 100);
+      } else if(!shouldReconnect) {
+        // Usuario detuvo manualmente
+        btnStart.disabled = false;
+        btnStart.classList.remove('recording');
+        btnStop.disabled = true;
+        stopAudioRecording();
+      }
+      // Si está pausado, no hacer nada (mantener UI pausada)
+    };
+
+    recognition.onresult = e => {
+      // ⚠️ Si está pausado, ignorar todos los resultados
+      // pero el recognition sigue corriendo (mantiene permisos)
+      if(isPaused) {
+        console.log('Pausado - ignorando resultados');
+        return;
+      }
+      
+      let interimTranscript = '';
+      let newFinalTranscript = '';
+
+      for(let i = e.resultIndex; i < e.results.length; i++) {
+        const transcript = e.results[i][0].transcript;
+        if(e.results[i].isFinal) {
+          newFinalTranscript += transcript + ' ';
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      finalTranscript += newFinalTranscript;
+      transcriptEl.textContent = finalTranscript + interimTranscript;
+      autoScrollTranscript();
+      mostrarNube(transcriptEl.textContent);
+    };
+
+    recognition.start();
+  }
+
+  function stopRecognition() {
+    shouldReconnect = false;
+    isPaused = false;
+    if(recognition) {
+      recognition.stop();
+      recognition = null;
+    }
+  }
+
+  async function formatTextWithAI(text) {
+    const apiKey = getApiKey();
+    if(!apiKey) {
+      alert('⚠️ Por favor configura tu API Key de OpenAI primero');
+      return null;
+    }
+
+    const prompt = `Formatea el siguiente texto transcrito de audio añadiendo:
+- Puntos y comas apropiados
+- Mayúsculas donde corresponda
+- Saltos de párrafo lógicos
+- Correcciones gramaticales mínimas
+
+Devuelve SOLO el texto formateado, sin explicaciones ni comentarios adicionales.
+
+Texto a formatear:
+${text}`;
+
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [{role: "user", content: prompt}],
+          max_tokens: 2000,
+          temperature: 0.3
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || response.statusText);
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content.trim();
+    } catch (e) {
+      alert("Error al formatear: " + e.message);
+      return null;
+    }
+  }
+
+  btnSavePdf.addEventListener('click', async () => {
+    const text = transcriptEl.textContent.trim();
+    if(!text) {
+      alert("No hay texto para guardar en PDF");
+      return;
+    }
+
+    btnSavePdf.disabled = true;
+    btnSavePdf.textContent = '📄 Generando...';
+
+    const formatted = await formatTextWithAI(text);
+    
+    if(formatted) {
+      const txtBlob = new Blob([formatted], {type:"text/plain;charset=utf-8"});
+      const txtUrl = URL.createObjectURL(txtBlob);
+      const txtLink = document.createElement('a');
+      txtLink.href = txtUrl;
+      txtLink.download = `transcripcion_formateada_${getTimestamp()}.txt`;
+      txtLink.click();
+      URL.revokeObjectURL(txtUrl);
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      doc.setFontSize(16);
+      doc.text('Transcripción Formateada', 20, 20);
+      
+      doc.setFontSize(10);
+      doc.text(`Generado: ${new Date().toLocaleString('es-ES')}`, 20, 30);
+      
+      doc.setFontSize(11);
+      const lines = doc.splitTextToSize(formatted, 170);
+      doc.text(lines, 20, 40);
+      
+      doc.save(`transcripcion_${getTimestamp()}.pdf`);
+      
+      alert('✅ Se han guardado:\n• PDF formateado\n• TXT formateado');
+    }
+
+    btnSavePdf.disabled = false;
+    btnSavePdf.textContent = '📄 PDF';
+  });
+
+  async function generateQuestions() {
+    const apiKey = getApiKey();
+    if(!apiKey) {
+      alert('⚠️ Por favor configura tu API Key de OpenAI primero');
+      return;
+    }
+
+    const texto = transcriptEl.textContent.trim();
+    if(!texto) {
+      alert('No hay texto para analizar');
+      return;
+    }
+
+    btnGenerateQuestions.disabled = true;
+    btnGenerateQuestions.textContent = '💡 Generando...';
+
+    const prompt = `Basándote en el siguiente texto, genera exactamente 5 preguntas:
+
+IMPORTANTE:
+- Preguntas 1-3: Sobre el contenido del texto (respuestas están en el texto)
+- Preguntas 4-5: Sobre temas relacionados pero cuya respuesta NO esté en el texto (preguntas que inviten a reflexionar más allá de lo expuesto)
+
+Texto:
+${texto}
+
+Responde solo con las 5 preguntas, una por línea, numeradas (1. 2. 3. 4. 5.)`;
+
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [{role: "user", content: prompt}],
+          max_tokens: 500,
+          temperature: 0.8
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        alert("Error en API: " + (err.error?.message || response.statusText));
+        return;
+      }
+
+      const data = await response.json();
+      const questions = data.choices[0].message.content.trim();
+      
+      questionsList.innerHTML = '';
+      questions.split('\n').filter(q => q.trim()).forEach(question => {
+        const div = document.createElement('div');
+        div.className = 'question-item';
+        div.textContent = question;
+        questionsList.appendChild(div);
+      });
+
+      questionsOverlay.classList.add('visible');
+    } catch (e) {
+      alert("Error: " + e.message);
+    } finally {
+      btnGenerateQuestions.disabled = false;
+      btnGenerateQuestions.textContent = '💡 Preguntas';
+    }
+  }
+
+  btnCloseQuestions.addEventListener('click', () => {
+    questionsOverlay.classList.remove('visible');
+  });
+
+  btnLoadFile.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => {
+    if(e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    if(file.type !== "text/plain") {
+      alert("Solo se aceptan archivos .txt");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      transcriptEl.textContent = evt.target.result;
+      finalTranscript = evt.target.result;
+      actualizarContadores();
+      mostrarNube(transcriptEl.textContent, true);
+    }
+    reader.readAsText(file);
+  });
+
+  btnSaveTxt.addEventListener('click', () => {
+    const text = transcriptEl.textContent;
+    const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transcripcion_${getTimestamp()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  btnCopy.addEventListener('click', () => {
+    navigator.clipboard.writeText(transcriptEl.textContent).then(() => {
+      alert("✅ Texto copiado al portapapeles");
+    });
+  });
+
+  btnReset.addEventListener('click', () => {
+    if(confirm('⚠️ ¿Deseas reiniciar?\n\nEsto borrará:\n• Transcripción\n• Resumen\n• Grabación de audio\n• Preguntas generadas\n\n¿Continuar?')) {
+      transcriptEl.textContent = "";
+      summaryText.value = "";
+      finalTranscript = "";
+      audioChunks = [];
+      btnDownloadAudio.disabled = true;
+      questionsOverlay.classList.remove('visible');
+      actualizarContadores();
+      mostrarNube("", true);
+      costInfo.textContent = "";
+    }
+  });
+
+  function resumenLocal(text) {
+    if (!text.trim()) return "";
+    const frases = text.match(/[^.!?]+[.!?]?/g) || [];
+    return frases.slice(0, 3).map(f => f.trim()).join(" ");
+  }
+
+  function tokensFromText(text) {
+    const palabras = text.trim().split(/\s+/).filter(w => w.length > 0).length;
+    return Math.ceil(palabras * 1.33);
+  }
+
+  function mostrarCoste(inputTokens, outputTokens) {
+    const precioPor1k = 0.002;
+    const costInput = (inputTokens/1000)*precioPor1k;
+    const costOutput = (outputTokens/1000)*precioPor1k;
+    const total = costInput + costOutput;
+    costInfo.textContent =
+      `Tokens entrada: ${inputTokens}, salida: ${outputTokens}, coste aprox: $${total.toFixed(5)}`;
+  }
+
+  btnLocalSummary.addEventListener('click', () => {
+    const texto = transcriptEl.textContent;
+    const resumen = resumenLocal(texto);
+    summaryText.value = resumen;
+    const inputTokens = tokensFromText(texto);
+    const outputTokens = tokensFromText(resumen);
+    mostrarCoste(inputTokens, outputTokens);
+  });
+
+  btnSummary.addEventListener('click', async () => {
+    const apiKey = getApiKey();
+    if(!apiKey) {
+      alert('⚠️ Por favor configura tu API Key de OpenAI primero');
+      return;
+    }
+
+    const texto = transcriptEl.textContent;
+    if (!texto.trim()) {
+      alert("No hay texto para resumir");
+      return;
+    }
+    summaryText.value = "Resumiendo...";
+    costInfo.textContent = "";
+
+    const prompt = `Resume el siguiente texto en un resumen claro, conciso y relevante en español:\n\n${texto}\n\nResumen:`;
+    const inputTokens = tokensFromText(prompt);
+
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [{role: "user", content: prompt}],
+          max_tokens: 500,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        summaryText.value = "Error en API: " + (err.error?.message || response.statusText);
+        return;
+      }
+
+      const data = await response.json();
+      const resumen = data.choices[0].message.content.trim();
+      summaryText.value = resumen;
+
+      const outputTokens = tokensFromText(resumen);
+      mostrarCoste(inputTokens, outputTokens);
+    } catch (e) {
+      summaryText.value = "Error: " + e.message;
+    }
+  });
+
+  btnSaveSummary.addEventListener('click', () => {
+    const text = summaryText.value;
+    if(!text.trim()) {
+      alert("No hay resumen para guardar");
+      return;
+    }
+    const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `resumen_${getTimestamp()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  function downloadPNG() {
+    const link = document.createElement('a');
+    link.download = `nube_palabras_${getTimestamp()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  function toggleTheme() {
+    body.classList.toggle('dark-mode');
+    const isDarkMode = body.classList.contains('dark-mode');
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    btnToggleTheme.textContent = isDarkMode ? '☀️ Modo claro' : '🌙 Modo oscuro';
+    mostrarNube(transcriptEl.textContent, true);
+  }
+
+  btnStart.onclick = () => startRecognition();
+  btnStop.onclick = () => stopRecognition();
+  btnDownload.onclick = () => downloadPNG();
+  btnToggleTheme.onclick = () => toggleTheme();
+  btnGenerateQuestions.onclick = () => generateQuestions();
+
+  function ajustarCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+  }
+
+  window.addEventListener('resize', () => {
+    ajustarCanvas();
+    mostrarNube(transcriptEl.textContent, true);
+  });
+
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+    body.classList.add('dark-mode');
+    btnToggleTheme.textContent = '☀️ Modo claro';
+  }
+
+  updateKeyStatus();
+  ajustarCanvas();
+  actualizarContadores();
+  mostrarNube("", true);
+};
+</script>
+</body>
+</html>
